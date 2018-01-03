@@ -34,7 +34,7 @@ public class DefaultConfigurationComponentMetaDataBuilder implements Configurati
     public void addConfigurations(BuildableLocalComponentMetadata metaData, Collection<? extends ConfigurationInternal> configurations) {
         for (ConfigurationInternal configuration : configurations) {
             addConfiguration(metaData, configuration);
-            dependenciesConverter.addDependencyDescriptors(metaData, configuration);
+            metaData.addDependenciesAndExcludesForConfiguration(configuration, dependenciesConverter);
             OutgoingVariant outgoingVariant = configuration.convertToOutgoingVariant();
             metaData.addArtifacts(configuration.getName(), outgoingVariant.getArtifacts());
             for (OutgoingVariant variant : outgoingVariant.getChildren()) {
@@ -45,7 +45,6 @@ public class DefaultConfigurationComponentMetaDataBuilder implements Configurati
 
     private void addConfiguration(BuildableLocalComponentMetadata metaData, ConfigurationInternal configuration) {
         configuration.preventFromFurtherMutation();
-        configuration.runDependencyActions();
 
         Set<String> hierarchy = Configurations.getNames(configuration.getHierarchy());
         Set<String> extendsFrom = Configurations.getNames(configuration.getExtendsFrom());

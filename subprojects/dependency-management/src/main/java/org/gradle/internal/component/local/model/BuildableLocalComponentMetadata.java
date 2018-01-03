@@ -18,7 +18,9 @@ package org.gradle.internal.component.local.model;
 
 import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.artifacts.configurations.OutgoingVariant;
+import org.gradle.api.internal.artifacts.ivyservice.moduleconverter.dependencies.DependenciesToModuleDescriptorConverter;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.internal.component.model.Exclude;
 import org.gradle.internal.component.model.ExcludeMetadata;
@@ -65,4 +67,6 @@ public interface BuildableLocalComponentMetadata {
      * These files should be treated as dependencies of this component, however they are currently treated separately as a migration step.
      */
     void addFiles(String configuration, LocalFileDependencyMetadata files);
+
+    void addDependenciesAndExcludesForConfiguration(ConfigurationInternal configuration, DependenciesToModuleDescriptorConverter dependenciesConverter);
 }

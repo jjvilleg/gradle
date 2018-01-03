@@ -22,8 +22,10 @@ import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.VersionConstraint;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentSelector;
+import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.artifacts.configurations.OutgoingVariant;
 import org.gradle.api.internal.artifacts.dependencies.DefaultImmutableVersionConstraint;
+import org.gradle.api.internal.artifacts.ivyservice.moduleconverter.dependencies.DependenciesToModuleDescriptorConverter;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.internal.Pair;
 import org.gradle.internal.component.external.descriptor.Configuration;
@@ -167,6 +169,12 @@ public class DefaultIvyModulePublishMetadata implements BuildableIvyModulePublis
     @Override
     public void addFiles(String configuration, LocalFileDependencyMetadata files) {
         // Ignore
+    }
+
+    @Override
+    public void addDependenciesAndExcludesForConfiguration(ConfigurationInternal configuration, DependenciesToModuleDescriptorConverter dependenciesConverter) {
+        configuration.runDependencyActions();
+        dependenciesConverter.addDependencyDescriptors(this, configuration);
     }
 
     private static class IvyVersionTransformer implements Transformer<String, String> {

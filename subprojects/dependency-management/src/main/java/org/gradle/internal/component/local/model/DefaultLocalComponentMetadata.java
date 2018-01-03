@@ -29,7 +29,9 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.artifacts.configurations.OutgoingVariant;
+import org.gradle.api.internal.artifacts.ivyservice.moduleconverter.dependencies.DependenciesToModuleDescriptorConverter;
 import org.gradle.api.internal.attributes.AttributesSchemaInternal;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.internal.Describables;
@@ -102,6 +104,7 @@ public class DefaultLocalComponentMetadata implements LocalComponentMetadata, Bu
         }
 
         for (DefaultLocalConfigurationMetadata configuration : allConfigurations.values()) {
+            configuration.realizeDependencies();
             DefaultLocalConfigurationMetadata configurationCopy = copy.allConfigurations.get(configuration.getName());
 
             // Dependencies
@@ -154,6 +157,13 @@ public class DefaultLocalComponentMetadata implements LocalComponentMetadata, Bu
         assert hierarchy.contains(name);
         DefaultLocalConfigurationMetadata conf = new DefaultLocalConfigurationMetadata(name, description, visible, transitive, extendsFrom, hierarchy, attributes, canBeConsumed, canBeResolved);
         allConfigurations.put(name, conf);
+    }
+
+    @Override
+    public void addDependenciesAndExcludesForConfiguration(ConfigurationInternal configuration, DependenciesToModuleDescriptorConverter dependenciesConverter) {
+        DefaultLocalConfigurationMetadata configurationMetadata = allConfigurations.get(configuration.getName());
+        configurationMetadata.dependenciesConverter = dependenciesConverter;
+        configurationMetadata.backingConfiguration = configuration;
     }
 
     @Override
@@ -258,13 +268,16 @@ public class DefaultLocalComponentMetadata implements LocalComponentMetadata, Bu
         private final boolean canBeConsumed;
         private final boolean canBeResolved;
 
+        private DependenciesToModuleDescriptorConverter dependenciesConverter;
+        private ConfigurationInternal backingConfiguration;
+
         private List<LocalOriginDependencyMetadata> definedDependencies = Lists.newArrayList();
         private List<ExcludeMetadata> definedExcludes = Lists.newArrayList();
         private List<LocalFileDependencyMetadata> definedFiles= Lists.newArrayList();
 
         private ImmutableList<LocalOriginDependencyMetadata> configurationDependencies;
         private ImmutableSet<LocalFileDependencyMetadata> configurationFileDependencies;
-        private ImmutableList<ExcludeMetadata> configurationExclude;
+        private ImmutableList<ExcludeMetadata> configurationExcludes;
 
         private List<LocalComponentArtifactMetadata> configurationArtifacts;
 
@@ -371,11 +384,8 @@ public class DefaultLocalComponentMetadata implements LocalComponentMetadata, Bu
         }
 
         void addDefinedDependencies(ImmutableList.Builder<LocalOriginDependencyMetadata> result) {
+            realizeDependencies();
             result.addAll(definedDependencies);
-        }
-
-        private boolean include(DefaultLocalConfigurationMetadata configuration) {
-            return hierarchy.contains(configuration.getName());
         }
 
         @Override
@@ -393,24 +403,26 @@ public class DefaultLocalComponentMetadata implements LocalComponentMetadata, Bu
         }
 
         void addDefinedFiles(ImmutableSet.Builder<LocalFileDependencyMetadata> result) {
+            realizeDependencies();
             result.addAll(definedFiles);
         }
 
         @Override
         public ImmutableList<ExcludeMetadata> getExcludes() {
-            if (configurationExclude == null) {
+            if (configurationExcludes == null) {
                 ImmutableList.Builder<ExcludeMetadata> result = ImmutableList.builder();
                 for (DefaultLocalConfigurationMetadata configuration : allConfigurations.values()) {
                     if (include(configuration)) {
                         configuration.addDefinedExcludes(result);
                     }
                 }
-                configurationExclude = result.build();
+                configurationExcludes = result.build();
             }
-            return configurationExclude;
+            return configurationExcludes;
         }
 
         void addDefinedExcludes(ImmutableList.Builder<ExcludeMetadata> result) {
+            realizeDependencies();
             result.addAll(definedExcludes);
         }
 
@@ -439,6 +451,18 @@ public class DefaultLocalComponentMetadata implements LocalComponentMetadata, Bu
             }
 
             return new MissingLocalArtifactMetadata(componentIdentifier, ivyArtifactName);
+        }
+
+        private boolean include(DefaultLocalConfigurationMetadata configuration) {
+            return hierarchy.contains(configuration.getName());
+        }
+
+        synchronized void realizeDependencies() {
+            if (backingConfiguration != null) {
+                backingConfiguration.runDependencyActions();
+                dependenciesConverter.addDependencyDescriptors(DefaultLocalComponentMetadata.this, backingConfiguration);
+                backingConfiguration = null;
+            }
         }
     }
 }
