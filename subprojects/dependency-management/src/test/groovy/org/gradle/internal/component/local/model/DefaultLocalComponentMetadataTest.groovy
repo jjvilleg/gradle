@@ -302,6 +302,7 @@ class DefaultLocalComponentMetadataTest extends Specification {
         given:
         metadata.addConfiguration("compile", null, [] as Set, ["compile"] as Set, true, true, null, true, true)
         metadata.addConfiguration("runtime", null, ["compile"] as Set, ["compile", "runtime"] as Set, true, true, null, true, true)
+        metadata.addConfiguration("other", null, [] as Set, ["other"] as Set, true, true, null, true, true)
 
         def rule1 = new DefaultExclude(DefaultModuleIdentifier.newId("group1", "module1"))
         def rule2 = new DefaultExclude(DefaultModuleIdentifier.newId("group1", "module1"))
