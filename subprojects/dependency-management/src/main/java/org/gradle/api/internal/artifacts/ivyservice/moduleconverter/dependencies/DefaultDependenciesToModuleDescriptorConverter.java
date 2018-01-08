@@ -25,7 +25,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.artifacts.dependencies.SelfResolvingDependencyInternal;
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
-import org.gradle.internal.component.local.model.BuildableLocalComponentMetadata;
+import org.gradle.internal.component.local.model.BuildableLocalConfigurationMetadata;
 import org.gradle.internal.component.local.model.LocalFileDependencyMetadata;
 
 import javax.annotation.Nullable;
@@ -41,12 +41,12 @@ public class DefaultDependenciesToModuleDescriptorConverter implements Dependenc
     }
 
     @Override
-    public void addDependencyDescriptors(BuildableLocalComponentMetadata metaData, ConfigurationInternal configuration) {
+    public void addDependencyDescriptors(BuildableLocalConfigurationMetadata metaData, ConfigurationInternal configuration) {
         addDependencies(metaData, configuration);
         addExcludeRules(metaData, configuration);
     }
 
-    private void addDependencies(BuildableLocalComponentMetadata metaData, ConfigurationInternal configuration) {
+    private void addDependencies(BuildableLocalConfigurationMetadata metaData, ConfigurationInternal configuration) {
         AttributeContainerInternal attributes = configuration.getAttributes();
         for (Dependency dependency : configuration.getDependencies()) {
             if (dependency instanceof ModuleDependency) {
@@ -64,7 +64,7 @@ public class DefaultDependenciesToModuleDescriptorConverter implements Dependenc
         }
     }
 
-    private void addExcludeRules(BuildableLocalComponentMetadata metaData, ConfigurationInternal configuration) {
+    private void addExcludeRules(BuildableLocalConfigurationMetadata metaData, ConfigurationInternal configuration) {
         for (ExcludeRule excludeRule : configuration.getExcludeRules()) {
             metaData.addExclude(configuration.getName(), excludeRuleConverter.convertExcludeRule(excludeRule));
         }
